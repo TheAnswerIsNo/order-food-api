@@ -1,0 +1,119 @@
+spring:
+  profiles:
+    active: dev
+  application:
+    name: order-food
+  datasource:
+    url: jdbc:mysql://${order-food.mysql.ip}:${order-food.mysql.port}/${order-food.mysql.db}?useSSL=false&useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC
+    username: ${order-food.mysql.username}
+    password: ${order-food.mysql.password}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      minimum-idle: 3
+      maximum-pool-size: 10
+      #????30????????1800?
+      max-lifetime: 30000
+      idle-timeout: 10000
+      connection-test-query: SELECT 1
+  mvc:
+    path match:
+      matching-strategy: ANT_PATH_MATCHER
+  jackson:
+    time-zone: GMT+8
+    serialization:
+      write-dates-as-timestamps: true
+    date-format: yyyy-MM-dd HH:mm:ss
+  redis:
+    port: ${order-food.redis.port}
+    database: ${order-food.redis.database}
+    host: ${order-food.redis.host}
+    password: ${order-food.redis.password}
+    timeout: 3s
+    lettuce:
+      pool:
+        # ????????
+        max-active: 20
+        # ???????????????????????
+        max-wait: -1ms
+        # ???????????
+        max-idle: 10
+        # ???????????
+        min-idle: 3
+        time-between-eviction-runs: 100
+  servlet: #??????????100MB?????????500MB??
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 500MB
+  jmx:
+    enabled: true
+
+server:
+  port: ${order-food.server.port}
+
+minio:
+  client:
+    endpoint: ${order-food.minio.endpoint}
+    accessKey: ${order-food.minio.accessKey}
+    secretKey: ${order-food.minio.secretKey}
+    bucketName: ${order-food.minio.bucketName}
+    pathPrefix: ${order-food.minio.pathPrefix}
+    virtualUrl: ${order-food.minio.virtualUrl}
+
+page helper:
+  # pageSize=0????????
+  page-size-zero: true
+  # ??????????????????????
+  reasonable: true
+  auto-dialect-class: hikari
+  auto-dialect: true
+  default-count: false
+
+token:
+  jwtSecretKey: ${order-food.token.jwtSecretKey}
+
+sa-token:
+  alone-redis:
+    port: ${order-food.redis.port}
+    database: ${order-food.sa-token.redis.database}
+    host: ${order-food.redis.host}
+    password: ${order-food.redis.password}
+    lettuce:
+      pool:
+        # ????????
+        max-active: 200
+        # ???????????????????????
+        max-wait: -1ms
+        # ???????????
+        max-idle: 200
+        # ???????????
+        min-idle: 20
+        time-between-eviction-runs: 100
+auto-table:
+  # ??????
+  enable: ${order-food.auto-table.enable}
+  record-sql:
+    # ??SQL??
+    enable: true
+    # ??????????????????????????SQL???
+    version: 1.0.0
+    # ?????
+    record-type: file
+    # ?????
+    folder-path: ./sqlLogs
+  mode: update
+  mysql:
+    column-default-charset: utf8mb4
+    column-default-collation: utf8mb4_0900_ai_ci
+    table-default-charset: utf8mb4
+    table-default-collation: utf8mb4_0900_ai_ci
+knife4j:
+  enable: true
+
+# 异步线程配置
+# 配置核心线程数
+async:
+  executor:
+    thread:
+      core_pool_size: ${order-food.thread.core_pool_size}
+      queue_capacity: ${order-food.thread.queue_capacity}
+      max_pool_size: ${order-food.thread.max_pool_size}

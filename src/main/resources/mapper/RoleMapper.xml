@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wait.app.repository.mapper.RoleMapper">
+
+    <resultMap id="BaseResultMap" type="com.wait.app.domain.entity.Role">
+            <id property="id" column="id" jdbcType="VARCHAR"/>
+            <result property="name" column="name" jdbcType="VARCHAR"/>
+            <result property="description" column="description" jdbcType="VARCHAR"/>
+            <result property="sort" column="sort" jdbcType="INTEGER"/>
+            <result property="enabled" column="enabled" jdbcType="INTEGER"/>
+            <result property="roleKey" column="role_key" jdbcType="VARCHAR"/>
+            <result property="creatorId" column="creator_id" jdbcType="VARCHAR"/>
+            <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+            <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,name,description,
+        sort,enabled,role_key,
+        creator_id,create_time,update_time
+    </sql>
+    <select id="getRoleByUserId" resultType="com.wait.app.domain.dto.role.RoleDTO">
+        select r.id,r.`name`,r.description,r.sort,r.enabled,r.role_key as rowKey from role as r,user_role as ur
+            where ur.user_id = #{userId} and ur.role_id = r.id
+    </select>
+</mapper>
