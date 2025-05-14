@@ -42,18 +42,16 @@ public class CartService {
 
 
     @Transactional(rollbackFor = Exception.class)
-    public void save(CartSaveParam cartSaveParam,String userId) {
+    public void save(CartSaveParam cartSaveParam) {
         if (StrUtil.isNotBlank(cartSaveParam.getId())) {
             // 若 cartSaveParam 已有 ID，直接复制属性并保存或更新
             Cart cart = BeanUtil.copyProperties(cartSaveParam, Cart.class);
-            cart.setUserId(userId);
             cartRepository.saveOrUpdate(cart);
             return;
         }
 
         // 查询当前用户是否有相同 goodsId 的购物车信息
         Cart existingCart = cartRepository.lambdaQuery()
-                .eq(Cart::getUserId, userId)
                 .eq(Cart::getGoodsId, cartSaveParam.getGoodsId())
                 .one();
 
@@ -64,14 +62,13 @@ public class CartService {
         } else {
             // 若不存在，创建新的购物车记录
             Cart newCart = BeanUtil.copyProperties(cartSaveParam, Cart.class);
-            newCart.setUserId(userId);
             cartRepository.saveOrUpdate(newCart);
         }
 
     }
 
-    public List<CartListDTO> list(String userId) {
-        List<Cart> list = cartRepository.lambdaQuery().eq(Cart::getUserId, userId).list();
+    public List<CartListDTO> list() {
+        List<Cart> list = cartRepository.lambdaQuery().list();
         if (CollUtil.isEmpty(list)){
             return List.of();
         }
@@ -82,8 +79,10 @@ public class CartService {
         list.forEach(item ->{
             CartListDTO cartListDTO = BeanUtil.copyProperties(item, CartListDTO.class);
             List<Attachment> attachments = goodsMap.get(item.getGoodsId());
-            List<String> photos = attachments.stream().map(Attachment::getObjName).map(objName -> attachmentService.getAttachmentUrl(objName, null)).toList();
-            cartListDTO.setPhotos(photos);
+            if (CollUtil.isNotEmpty(attachments)){
+                List<String> photos = attachments.stream().map(Attachment::getObjName).map(objName -> attachmentService.getAttachmentUrl(objName, null)).toList();
+                cartListDTO.setPhotos(photos);
+            }
             cartList.add(cartListDTO);
         });
 

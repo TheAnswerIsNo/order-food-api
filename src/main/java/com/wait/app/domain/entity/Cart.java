@@ -28,9 +28,6 @@ public class Cart {
     @ColumnId(mode = IdType.ASSIGN_UUID,comment = "id",length = 45)
     private String id;
 
-    @AutoColumn(comment = "用户id",notNull = true,length = 45)
-    private String userId;
-
     @AutoColumn(comment = "商品id",notNull = true,length = 45)
     private String goodsId;
 

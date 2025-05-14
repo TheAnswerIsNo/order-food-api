@@ -30,9 +30,6 @@ public class UserInfoDTO {
     @ApiModelProperty(value = "昵称")
     private String nickname;
 
-    @ApiModelProperty(value = "性别")
-    private Integer sex;
-
     @ApiModelProperty(value = "创建时间")
     private LocalDateTime createTime;
 

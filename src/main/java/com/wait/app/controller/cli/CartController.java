@@ -1,5 +1,6 @@
 package com.wait.app.controller.cli;
 
+import cn.dev33.satoken.annotation.SaIgnore;
 import cn.dev33.satoken.util.SaResult;
 import com.wait.app.controller.BaseController;
 import com.wait.app.domain.dto.cart.CartListDTO;
@@ -19,6 +20,7 @@ import java.util.List;
 @RestController
 @Api(tags = "购物车",value = "购物车")
 @RequestMapping("/cart")
+@SaIgnore
 public class CartController extends BaseController {
 
     private final CartService cartService;
@@ -31,14 +33,14 @@ public class CartController extends BaseController {
     @PostMapping("/save")
     @ApiOperation(value = "保存购物车")
     public SaResult save(@RequestBody CartSaveParam cartSaveParam){
-        cartService.save(cartSaveParam,getUserId());
+        cartService.save(cartSaveParam);
         return SaResult.ok("保存成功");
     }
 
     @GetMapping("/list")
     @ApiOperation(value = "购物车列表")
     public SaResult list(){
-        List<CartListDTO> list =  cartService.list(getUserId());
+        List<CartListDTO> list =  cartService.list();
         return SaResult.data(list);
     }
 

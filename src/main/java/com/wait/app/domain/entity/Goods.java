@@ -32,9 +32,6 @@ public class Goods{
     @AutoColumn(comment = "名称",notNull = true)
     private String name;
 
-    @AutoColumn(comment = "所属类别",notNull = true,length = 45)
-    private String dictId;
-
     @AutoColumn(comment = "单价",notNull = true)
     private BigDecimal price;
 
