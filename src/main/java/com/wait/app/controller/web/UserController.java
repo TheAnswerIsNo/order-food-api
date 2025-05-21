@@ -2,18 +2,15 @@ package com.wait.app.controller.web;
 
 
 import cn.dev33.satoken.util.SaResult;
-import com.wait.app.controller.BaseController;
 import com.wait.app.domain.dto.user.UserInfoDTO;
 import com.wait.app.domain.param.user.UserListParam;
+import com.wait.app.domain.param.user.UserSaveParam;
 import com.wait.app.service.UserService;
 import com.wait.app.utils.page.ResponseDTOWithPage;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * @author 天
@@ -22,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/user")
 @Api(tags = "用户",value = "用户")
-public class UserController extends BaseController {
+public class UserController {
 
     private final UserService userService;
 
@@ -45,5 +42,18 @@ public class UserController extends BaseController {
         return SaResult.data(list);
     }
 
+    @ApiOperation(value = "保存用户")
+    @PostMapping("/save")
+    public SaResult save(@RequestBody UserSaveParam userSaveParam){
+        userService.save(userSaveParam);
+        return SaResult.ok("保存成功");
+    }
+
+    @ApiOperation(value = "删除用户")
+    @GetMapping("/delete")
+    public SaResult delete(@RequestParam String id){
+        userService.delete(id);
+        return SaResult.ok("删除成功");
+    }
 
 }

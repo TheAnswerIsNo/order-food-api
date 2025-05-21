@@ -6,8 +6,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  *
@@ -21,9 +19,6 @@ public class DictListDTO {
 
     @ApiModelProperty(value = "id")
     private String id;
-
-    @ApiModelProperty(value = "父级id")
-    private String parentId;
 
     @ApiModelProperty(value = "标签")
     private String label;
@@ -40,6 +35,4 @@ public class DictListDTO {
     @ApiModelProperty(value = "创建时间")
     private LocalDateTime createTime;
 
-    @ApiModelProperty(value = "子级字典")
-    private List<DictListDTO> children = new ArrayList<>();
 }

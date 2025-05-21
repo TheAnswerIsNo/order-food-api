@@ -1,5 +1,6 @@
 package com.wait.app.service;
 
+import cn.dev33.satoken.secure.BCrypt;
 import cn.dev33.satoken.session.SaSession;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.bean.BeanUtil;
@@ -10,6 +11,7 @@ import com.wait.app.domain.dto.user.UserInfoDTO;
 import com.wait.app.domain.entity.User;
 import com.wait.app.domain.entity.UserRole;
 import com.wait.app.domain.param.user.UserListParam;
+import com.wait.app.domain.param.user.UserSaveParam;
 import com.wait.app.repository.UserRepository;
 import com.wait.app.repository.UserRoleRepository;
 import com.wait.app.utils.page.PageUtil;
@@ -25,7 +27,7 @@ import java.util.List;
  * Time: 2024/9/15 10:54
  */
 @Service
-public class UserService {
+public class UserService{
 
     private final UserRoleRepository userRoleRepository;
 
@@ -76,5 +78,25 @@ public class UserService {
                 .list();
         List<UserInfoDTO> result = BeanUtil.copyToList(list, UserInfoDTO.class);
         return PageUtil.getListDTO(result,userListParam);
+    }
+
+    /**
+     * 保存用户
+     * @param userSaveParam userSaveParam
+     */
+    public void save(UserSaveParam userSaveParam) {
+        User user = BeanUtil.toBean(userSaveParam, User.class);
+        // 加密
+        String hashpw = BCrypt.hashpw(userSaveParam.getPassword(), BCrypt.gensalt(15));
+        user.setPassword(hashpw);
+        userRepository.saveOrUpdate(user);
+    }
+
+    /**
+     * 删除用户
+     * @param id id
+     */
+    public void delete(String id) {
+        userRepository.removeById(id);
     }
 }

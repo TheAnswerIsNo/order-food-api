@@ -10,7 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -35,27 +34,10 @@ public class DictService {
      */
     public List<DictListDTO> list(String type) {
         List<Dict> dictList = dictRepository.lambdaQuery().eq(StrUtil.isNotEmpty(type),Dict::getType, type)
+                .orderByDesc(Dict::getSort)
                 .orderByDesc(Dict::getCreateTime)
-                .orderByDesc(Dict::getSort).list();
-        List<DictListDTO> dictListDTOList = BeanUtil.copyToList(dictList, DictListDTO.class)
-                .stream().sorted(Comparator.comparing(DictListDTO::getSort).reversed()).toList();
-        List<DictListDTO> parentDict = dictListDTOList.stream().filter(item -> StrUtil.isEmpty(item.getParentId())).toList();
-        parentDict.forEach(item -> buildDictList(item, dictListDTOList));
-        return parentDict;
-    }
-
-    /**
-     * 递归构造树
-     * @param parentDict parentDict
-     * @param dictListDTOList dictListDTOList
-     */
-    private void buildDictList(DictListDTO parentDict,List<DictListDTO> dictListDTOList){
-        dictListDTOList.forEach(dictListDTO -> {
-            if (dictListDTO.getParentId().equals(parentDict.getId())){
-                parentDict.getChildren().add(dictListDTO);
-                buildDictList(dictListDTO,dictListDTOList);
-            }
-        });
+                .list();
+        return BeanUtil.copyToList(dictList, DictListDTO.class);
     }
 
     /**

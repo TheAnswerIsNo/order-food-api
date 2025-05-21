@@ -23,17 +23,17 @@ public class OrderListDTO {
     @ApiModelProperty(value = "id")
     private String id;
 
-    @ApiModelProperty(value = "用户id")
-    private String userId;
-
-    @ApiModelProperty(value = "手机号")
-    private String phone;
+    @ApiModelProperty(value = "订单编号")
+    private Integer orderNo;
 
     @ApiModelProperty(value = "总价")
     private BigDecimal totalPrice;
 
     @ApiModelProperty(value = "总数量")
     private Integer totalNumber;
+
+    @ApiModelProperty(value = "堂食(0:外带 1:堂食)")
+    private Integer dine;
 
     @ApiModelProperty(value = "订单状态(0:未付款 1:送货中 2:已送达 3:已完成 4:订单取消)")
     private Integer status;

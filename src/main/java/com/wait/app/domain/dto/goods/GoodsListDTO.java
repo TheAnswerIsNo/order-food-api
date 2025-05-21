@@ -26,13 +26,16 @@ public class GoodsListDTO {
     private String name;
 
     @ApiModelProperty(value = "所属类别id")
-    private String dictId;
+    private List<String> dictIds;
 
     @ApiModelProperty(value = "单价")
     private BigDecimal price;
 
     @ApiModelProperty(value = "描述")
     private String description;
+
+    @ApiModelProperty(value = "是否推荐(0:不推荐 1:推荐)")
+    private Integer isRecommend;
 
     @ApiModelProperty(value = "创建时间")
     private LocalDateTime createTime;

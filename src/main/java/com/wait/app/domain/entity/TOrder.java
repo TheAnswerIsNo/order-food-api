@@ -28,8 +28,8 @@ public class TOrder {
     @ColumnId(mode = IdType.ASSIGN_UUID,comment = "id",length = 45)
     private String id;
 
-    @AutoColumn(comment = "用户id",notNull = true,length = 45)
-    private String userId;
+    @AutoColumn(comment = "订单编号",notNull = true,length = 45)
+    private Integer orderNo;
 
     @AutoColumn(comment = "总价",notNull = true,defaultValue = "0")
     private BigDecimal totalPrice;
@@ -37,10 +37,10 @@ public class TOrder {
     @AutoColumn(comment = "总数量",notNull = true,defaultValue = "0")
     private Integer totalNumber;
 
-    @AutoColumn(comment = "地址id",notNull = true,length = 45)
-    private String addressId;
+    @AutoColumn(comment = "是否堂食(0:外带 1:堂食)",notNull = true,defaultValue = "1")
+    private Integer dine;
 
-    @AutoColumn(comment = "订单状态(0:未付款 1:送货中 2:已送达 3:已完成 4:订单取消)",notNull = true,defaultValue = "0")
+    @AutoColumn(comment = "订单状态(0:未付款 1:制作中 2:已完成 3:订单取消)",notNull = true,defaultValue = "0")
     private Integer status;
 
     @InsertFillTime

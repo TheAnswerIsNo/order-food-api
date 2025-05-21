@@ -1,18 +1,18 @@
-package com.wait.app.controller.cli;
+package com.wait.app.controller.web;
 
 import cn.dev33.satoken.util.SaResult;
 import cn.hutool.http.HttpStatus;
 import cn.hutool.json.JSONUtil;
 import com.wait.app.controller.BaseController;
-import com.wait.app.domain.dto.order.OrderPayDTO;
+import com.wait.app.domain.dto.order.OrderListDTO;
 import com.wait.app.domain.dto.wechatPayCallback.DecryptedSuccessData;
 import com.wait.app.domain.dto.wechatPayCallback.Resource;
 import com.wait.app.domain.dto.wechatPayCallback.WechatPayCallback;
 import com.wait.app.domain.dto.wechatPayCallback.WechatResponse;
 import com.wait.app.domain.enumeration.WeChatInfoEnum;
-import com.wait.app.domain.param.order.OrderSubmitParam;
+import com.wait.app.domain.param.order.OrderListParam;
 import com.wait.app.service.OrderService;
-import com.wechat.pay.java.service.payments.jsapi.model.PrepayWithRequestPaymentResponse;
+import com.wait.app.utils.page.ResponseDTOWithPage;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,25 +49,25 @@ public class OrderController extends BaseController {
         this.orderService = orderService;
     }
 
-    @PostMapping("/submit")
-    @ApiOperation(value = "提交订单")
-    public SaResult addCart(@RequestBody OrderSubmitParam orderSubmitParam){
-        OrderPayDTO orderPayDTO = orderService.submit(orderSubmitParam,getUserId());
-        return SaResult.data(orderPayDTO);
-    }
-
     @ApiOperation("取消订单")
-    @PostMapping(value = "/cancel/{orderId}")
+    @GetMapping(value = "/cancel/{orderId}")
     public SaResult cancelOrder(@PathVariable String orderId){
         orderService.cancelOrder(orderId);
         return SaResult.ok("取消订单成功");
     }
 
-    @ApiOperation("付款接口")
-    @PostMapping(value="/pay/{orderId}")
-    public SaResult payOrder(@PathVariable("orderId") String orderId){
-        PrepayWithRequestPaymentResponse response = orderService.payOrder(orderId);
-        return SaResult.data(response);
+    @ApiOperation("订单列表")
+    @GetMapping(value = "/list")
+    public SaResult list(@ModelAttribute OrderListParam orderListParam){
+        ResponseDTOWithPage<OrderListDTO> list = orderService.list(orderListParam);
+        return SaResult.data(list);
+    }
+
+    @ApiOperation("制作完成")
+    @GetMapping(value = "/complete/{orderId}")
+    public SaResult complete(@PathVariable String orderId){
+        orderService.complete(orderId);
+        return SaResult.ok("修改订单状态成功");
     }
 
     @ApiOperation("支付回调接口")
@@ -106,4 +106,5 @@ public class OrderController extends BaseController {
         String s = new String(cipher.doFinal(Base64.getDecoder().decode(resource.getCiphertext())), StandardCharsets.UTF_8);
         return JSONUtil.toBean(s,DecryptedSuccessData.class);
     }
+
 }

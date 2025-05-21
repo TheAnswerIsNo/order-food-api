@@ -11,7 +11,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 
 /**
@@ -33,11 +32,17 @@ public class GoodsCliController extends BaseController {
     }
 
     @ApiOperation(value = "商品列表")
-    @GetMapping("/list")
-    public SaResult list(){
-        Map<String, List<GoodsListDTO>> list = goodsService.cliList();
+    @GetMapping("/list/{dictId}")
+    public SaResult list(@PathVariable String dictId){
+        List<GoodsListDTO> list = goodsService.cliList(dictId);
         return SaResult.data(list);
     }
 
+    @ApiOperation(value = "商品推荐列表")
+    @GetMapping("/list/recommend")
+    public SaResult listRecommend(){
+        List<GoodsListDTO> list = goodsService.cliListRecommend();
+        return SaResult.data(list);
+    }
 
 }

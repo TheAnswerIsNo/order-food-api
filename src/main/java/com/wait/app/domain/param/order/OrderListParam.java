@@ -15,6 +15,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class OrderListParam extends RequestDTOWithPage {
 
-    @ApiModelProperty(value = "订单状态(0:未付款 1:送货中 2:已送达 3:已完成 4:订单取消)")
+    @ApiModelProperty(value = "订单状态(0:未付款 1:制作中 2:已完成 3:订单取消)")
     private Integer status;
 }

@@ -5,7 +5,6 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjUtil;
 import com.wait.app.domain.dto.order.OrderListDTO;
-import com.wait.app.domain.dto.order.OrderPayDTO;
 import com.wait.app.domain.dto.wechatPayCallback.DecryptedSuccessData;
 import com.wait.app.domain.entity.*;
 import com.wait.app.domain.enumeration.AttachmentEnum;
@@ -17,7 +16,6 @@ import com.wait.app.domain.param.order.OrderSubmitParam;
 import com.wait.app.repository.CartRepository;
 import com.wait.app.repository.OrderDetailRepository;
 import com.wait.app.repository.OrderRepository;
-import com.wait.app.repository.UserRepository;
 import com.wait.app.utils.page.PageUtil;
 import com.wait.app.utils.page.ResponseDTOWithPage;
 import com.wechat.pay.java.core.Config;
@@ -33,6 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -51,8 +50,6 @@ public class OrderService {
 
     private final OrderDetailRepository orderDetailRepository;
 
-    private final UserRepository userRepository;
-
     private Config payConfig;
 
     private final RedisTemplate<String, Object> objectRedisTemplate;
@@ -62,10 +59,9 @@ public class OrderService {
     private final AttachmentService attachmentService;
 
     @Autowired
-    public OrderService(OrderRepository orderRepository, OrderDetailRepository orderDetailRepository, UserRepository userRepository, RedisTemplate<String, Object> objectRedisTemplate, CartRepository cartRepository, AttachmentService attachmentService) {
+    public OrderService(OrderRepository orderRepository, OrderDetailRepository orderDetailRepository, RedisTemplate<String, Object> objectRedisTemplate, CartRepository cartRepository, AttachmentService attachmentService) {
         this.orderRepository = orderRepository;
         this.orderDetailRepository = orderDetailRepository;
-        this.userRepository = userRepository;
         this.objectRedisTemplate = objectRedisTemplate;
         this.cartRepository = cartRepository;
         this.attachmentService = attachmentService;
@@ -74,16 +70,19 @@ public class OrderService {
     /**
      * 提交订单
      * @param orderSubmitParam orderSubmitParam
-     * @param userId 用户id
      */
     @Transactional(rollbackFor = Exception.class)
-    public OrderPayDTO submit(OrderSubmitParam orderSubmitParam, String userId) {
+    public OrderListDTO submit(OrderSubmitParam orderSubmitParam) {
         // 删除购物车
         cartRepository.lambdaUpdate().in(Cart::getId,orderSubmitParam.getCartIds()).remove();
-//        User user = (User) StpUtil.getSession().get(SaSession.USER);
         // 1.创建订单参数
-        TOrder order = TOrder.builder().userId(userId)
-                .addressId(orderSubmitParam.getAddressId()).build();
+        // 生成唯一订单号 今天的订单数据库已存在订单号+1
+        Integer orderNo = generateOrderNo();
+        TOrder order = TOrder
+                .builder()
+                .orderNo(orderNo)
+                .dine(orderSubmitParam.getDine())
+                .build();
         orderRepository.save(order);
 
         AtomicReference<BigDecimal> totalPrice = new AtomicReference<>(BigDecimal.ZERO);
@@ -107,7 +106,43 @@ public class OrderService {
         // 设置订单时间15分钟
         objectRedisTemplate.opsForValue().set(PrefixEnum.ORDER.getValue() + order.getId(),new PrepayWithRequestPaymentResponse(), Duration.ofMinutes(15));
 
-        return new OrderPayDTO(null, order.getId());
+        OrderListDTO orderListDTO = new OrderListDTO();
+        BeanUtil.copyProperties(order,orderListDTO);
+        List<OrderListDTO.OrderListDetail> orderListDetailList = BeanUtil.copyToList(orderDetails, OrderListDTO.OrderListDetail.class);
+        List<String> goodsIdList = orderListDetailList.stream().map(OrderListDTO.OrderListDetail::getGoodsId).toList();
+
+        // 设置图片
+        Map<String, List<Attachment>> attachmentMap = attachmentService.getAttachment(AttachmentEnum.GOODS.getValue(), goodsIdList)
+                .stream().collect(Collectors.groupingBy(Attachment::getOwnerId));
+        orderListDetailList.forEach(item -> {
+            List<Attachment> attachmentList = attachmentMap.getOrDefault(item.getGoodsId(), List.of());
+            if (CollUtil.isNotEmpty(attachmentList)){
+                List<String> photos = new ArrayList<>();
+                for (Attachment attachment : attachmentList) {
+                    String url = attachmentService.getAttachmentUrl(attachment.getObjName(), null);
+                    photos.add(url);
+                }
+                item.setPhotos(photos);
+            }
+        });
+        orderListDTO.setOrderListDetailList(orderListDetailList);
+        return orderListDTO;
+    }
+
+    /**
+     * 生成唯一订单号
+     * @return 订单号
+     */
+    private synchronized Integer generateOrderNo() {
+        // 查询今天的订单对订单号拍倒叙
+        LocalDate now = LocalDate.now();
+        List<TOrder> orders = orderRepository.lambdaQuery().like(TOrder::getCreateTime, now).orderByDesc(TOrder::getOrderNo).list();
+        if (CollUtil.isEmpty(orders)) {
+            return 1;
+        }
+        TOrder order = orders.get(0);
+        Integer orderNo = order.getOrderNo();
+        return orderNo + 1;
     }
 
     private PrepayWithRequestPaymentResponse createPrepayOrder(TOrder order, String openId) {
@@ -121,7 +156,7 @@ public class OrderService {
         request.setAmount(amount);
         request.setAppid(WeChatInfoEnum.APPID.getValue());
         request.setMchid(WeChatInfoEnum.MERCHANT_ID.getValue());
-        request.setDescription("jc商品");
+        request.setDescription("肯德基商品");
         request.setNotifyUrl(WeChatInfoEnum.NOTIFYURL.getValue());
         request.setOutTradeNo(order.getId());
         Payer payer = new Payer();
@@ -154,20 +189,23 @@ public class OrderService {
      * 吊起wx支付
      * @param orderId orderId
      */
-    public PrepayWithRequestPaymentResponse payOrder(String orderId) {
+    public Integer payOrder(String orderId) {
         // TODO 付款
         // 修改订单状态
         TOrder order = TOrder.builder()
                 .id(orderId)
-                .status(OrderStatusEnum.SHZ.getValue())
+                .status(OrderStatusEnum.ZZZ.getValue())
                 .build();
         orderRepository.updateById(order);
+
+        String orderKey = PrefixEnum.ORDER.getValue() + orderId;
+        objectRedisTemplate.delete(orderKey);
 
 //        String orderKey = PrefixEnum.ORDER.getValue() + orderId;
 //        RBucket<Object> bucket = redissonClient.getBucket(orderKey);
 //        String prepayResponse = (String)bucket.get();
 //        return JSONUtil.toBean(prepayResponse, PrepayWithRequestPaymentResponse.class);
-        return new PrepayWithRequestPaymentResponse();
+        return order.getOrderNo();
     }
 
     /**
@@ -179,21 +217,21 @@ public class OrderService {
         // 修改订单状态
         TOrder order = TOrder.builder()
                 .id(orderId)
-                .status(OrderStatusEnum.SHZ.getValue())
+//                .status(OrderStatusEnum.SHZ.getValue())
                 .build();
         orderRepository.updateById(order);
     }
 
     /**
      * 订单列表
-     * @param userId userId
      * @param orderListParam orderListParam
      */
-    public ResponseDTOWithPage<OrderListDTO> list(String userId, OrderListParam orderListParam) {
+    public ResponseDTOWithPage<OrderListDTO> list(OrderListParam orderListParam) {
         PageUtil.startPage(orderListParam,true,TOrder.class);
         List<TOrder> orderList = orderRepository.lambdaQuery()
-                .eq(TOrder::getUserId, userId)
-                .eq(ObjUtil.isNotEmpty(orderListParam.getStatus()), TOrder::getStatus, orderListParam.getStatus()).list();
+                .eq(ObjUtil.isNotEmpty(orderListParam.getStatus()), TOrder::getStatus, orderListParam.getStatus())
+                .orderByDesc(TOrder::getCreateTime)
+                .list();
         if (CollUtil.isEmpty(orderList)) {
             return new ResponseDTOWithPage<>(List.of(),0L);
         }
@@ -205,10 +243,7 @@ public class OrderService {
                 .in(OrderDetail::getOrderId, orderIds)
                 .list();
         Map<String, List<OrderDetail>> orderDetailMap = orderDetails.stream().collect(Collectors.groupingBy(OrderDetail::getOrderId));
-        // 完善订单用户信息
-        List<String> userIds = orderList.stream().map(TOrder::getUserId).toList();
-        Map<String, List<User>> userMap = userRepository.lambdaQuery().in(User::getId, userIds)
-                .list().stream().collect(Collectors.groupingBy(User::getId));
+
         // 添加图片
         // 获取商品ids
         List<String> goodsIds = orderDetails.stream().map(OrderDetail::getGoodsId).toList();
@@ -231,9 +266,76 @@ public class OrderService {
                 orderListDetails.add(orderListDetail);
             }
             item.setOrderListDetailList(orderListDetails);
-            item.setPhone(userMap.get(item.getUserId()).get(0).getPhone());
         });
 
         return result;
+    }
+
+    /**
+     * 完成订单
+     * @param orderId orderId
+     */
+    public void complete(String orderId) {
+        // 修改订单状态
+        orderRepository.lambdaUpdate()
+                .eq(TOrder::getStatus,OrderStatusEnum.ZZZ.getValue())
+               .eq(TOrder::getId,orderId)
+               .set(TOrder::getStatus,OrderStatusEnum.YWC.getValue())
+               .update();
+    }
+
+    /**
+     * 客户端订单列表
+     * @return list
+     */
+    public List<OrderListDTO> cliList() {
+        List<TOrder> orderList = orderRepository.lambdaQuery()
+                .orderByDesc(TOrder::getCreateTime)
+                .list();
+        if (CollUtil.isEmpty(orderList)) {
+            return List.of();
+        }
+        List<OrderListDTO> list = BeanUtil.copyToList(orderList, OrderListDTO.class);
+        List<String> orderIds = list.stream().map(OrderListDTO::getId).toList();
+        // 完善订单详情
+        List<OrderDetail> orderDetails = orderDetailRepository.lambdaQuery()
+                .in(OrderDetail::getOrderId, orderIds)
+                .list();
+        Map<String, List<OrderDetail>> orderDetailMap = orderDetails.stream().collect(Collectors.groupingBy(OrderDetail::getOrderId));
+
+        // 添加图片
+        // 获取商品ids
+        List<String> goodsIdList = orderDetails.stream().map(OrderDetail::getGoodsId).distinct().collect(Collectors.toList());
+        Map<String, List<Attachment>> attachmentMap = attachmentService.getAttachment(AttachmentEnum.GOODS.getValue(), goodsIdList)
+                .stream().collect(Collectors.groupingBy(Attachment::getOwnerId));
+        list.forEach(item -> {
+            List<OrderListDTO.OrderListDetail> orderListDetails = new ArrayList<>();
+            List<OrderDetail> orderDetailList = orderDetailMap.get(item.getId());
+            for (OrderDetail orderDetail : orderDetailList) {
+                OrderListDTO.OrderListDetail orderListDetail = BeanUtil.copyProperties(orderDetail, OrderListDTO.OrderListDetail.class);
+                List<Attachment> attachmentList = attachmentMap.getOrDefault(orderListDetail.getGoodsId(), List.of());
+                if (CollUtil.isNotEmpty(attachmentList)){
+                    List<String> photos = new ArrayList<>();
+                    for (Attachment attachment : attachmentList) {
+                        String url = attachmentService.getAttachmentUrl(attachment.getObjName(), null);
+                        photos.add(url);
+                    }
+                    orderListDetail.setPhotos(photos);
+                }
+                orderListDetails.add(orderListDetail);
+            }
+            item.setOrderListDetailList(orderListDetails);
+        });
+
+        return list;
+    }
+
+    /**
+     * 获取制作中订单数量
+     * @return number
+     */
+    public Integer productionNumber() {
+        Long count = orderRepository.lambdaQuery().eq(TOrder::getStatus, OrderStatusEnum.ZZZ.getValue()).count();
+        return count.intValue();
     }
 }

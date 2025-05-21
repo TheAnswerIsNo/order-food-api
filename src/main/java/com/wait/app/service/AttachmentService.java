@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -59,7 +60,7 @@ public class AttachmentService{
         return attachmentRepository.list(queryWrapper);
     }
 
-    public List<Attachment> getAttachment(String ownerType, List<String> ownerIds) {
+    public List<Attachment> getAttachment(String ownerType, Collection<String> ownerIds) {
         LambdaQueryWrapper<Attachment> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(Attachment::getOwnerType, ownerType);
         queryWrapper.in(CollUtil.isNotEmpty(ownerIds),Attachment::getOwnerId, ownerIds);

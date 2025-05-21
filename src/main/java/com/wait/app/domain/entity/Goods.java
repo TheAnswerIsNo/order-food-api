@@ -38,6 +38,9 @@ public class Goods{
     @AutoColumn(comment = "描述")
     private String description;
 
+    @AutoColumn(comment = "是否推荐(0:不推荐 1:推荐)",notNull = true,defaultValue = "0")
+    private Integer isRecommend;
+
     @InsertFillTime
     @AutoColumn(comment = "创建时间",notNull = true)
     private LocalDateTime createTime;

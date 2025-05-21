@@ -64,11 +64,10 @@ public class CartService {
             Cart newCart = BeanUtil.copyProperties(cartSaveParam, Cart.class);
             cartRepository.saveOrUpdate(newCart);
         }
-
     }
 
     public List<CartListDTO> list() {
-        List<Cart> list = cartRepository.lambdaQuery().list();
+        List<Cart> list = cartRepository.lambdaQuery().orderByDesc(Cart::getCreateTime).list();
         if (CollUtil.isEmpty(list)){
             return List.of();
         }

@@ -12,13 +12,11 @@ public enum OrderStatusEnum {
 
     WFK("未付款",0),
 
-    SHZ("送货中",1),
+    ZZZ("制作中",1),
 
-    YSD("已送达",2),
+    YWC("已完成",2),
 
-    YWC("已完成",3),
-
-    DDQX("订单取消",4),
+    DDQX("订单取消",3),
     ;
 
     private final String name;

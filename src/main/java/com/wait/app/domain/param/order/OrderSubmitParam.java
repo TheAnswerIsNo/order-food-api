@@ -18,8 +18,8 @@ import java.util.List;
 @AllArgsConstructor
 public class OrderSubmitParam {
 
-    @ApiModelProperty(value = "地址id")
-    private String addressId;
+    @ApiModelProperty(value = "堂食(0:外带 1:堂食)")
+    private Integer dine;
 
     @ApiModelProperty(value = "订单明细")
     private List<OrderSubmitDetail> orderSubmitDetailList;

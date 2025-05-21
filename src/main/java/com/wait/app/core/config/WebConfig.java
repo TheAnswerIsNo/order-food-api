@@ -96,7 +96,8 @@ public class WebConfig implements WebMvcConfigurer {
                     // 拦截的 path 列表，可以写多个 */
                     .match("/**")
                     // 排除掉的 path 列表，可以写多个
-                    .notMatch("/login/web","/login/wechat")
+                    .notMatch("/login/web","/goods/cli/list/{dictId}",
+                            "/order/cli/cancel/{orderId}","/order/cli/pay/{orderId}")
                     .notMatch(EXCLUDE_PATH_PATTERNS)
                     // 要执行的校验动作，可以写完整的 lambda 表达式
                     .check(r -> StpUtil.checkLogin());

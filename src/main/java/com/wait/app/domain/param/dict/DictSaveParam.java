@@ -17,9 +17,6 @@ public class DictSaveParam {
     @ApiModelProperty(value = "id")
     private String id;
 
-    @ApiModelProperty(value = "parentId")
-    private String parentId;
-
     @ApiModelProperty(value = "排序")
     private Integer sort;
 

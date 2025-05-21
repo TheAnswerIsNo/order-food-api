@@ -45,11 +45,17 @@ public class GoodsController extends BaseController {
     }
 
     @PostMapping("/save")
-    @ApiOperation(value = "保存购物车")
+    @ApiOperation(value = "保存商品")
     public SaResult save(GoodsSaveParam goodsSaveParam){
         goodsService.save(goodsSaveParam);
         return SaResult.ok("保存成功");
     }
 
+    @GetMapping("/recommend")
+    @ApiOperation(value = "推荐商品")
+    public SaResult recommend(@RequestParam String goodsId){
+        goodsService.recommend(goodsId);
+        return SaResult.ok("修改成功");
+    }
 
 }
